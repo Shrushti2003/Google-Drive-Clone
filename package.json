@@ -1,0 +1,24 @@
+{
+  "name": "cloudnest-drive",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "A production-ready Google Drive-inspired cloud storage SaaS built with React, Express, MongoDB, Cloudinary, and Stripe.",
+  "scripts": {
+    "install:all": "npm install && npm --prefix frontend install && npm --prefix backend install",
+    "dev": "concurrently \"npm --prefix backend run dev\" \"npm --prefix frontend run dev\"",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix backend start",
+    "lint": "npm --prefix frontend run lint && npm --prefix backend run lint",
+    "smoke": "npm --prefix backend run smoke",
+    "integration": "npm --prefix backend run integration"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
