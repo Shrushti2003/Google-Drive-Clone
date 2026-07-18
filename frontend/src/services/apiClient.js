@@ -1,8 +1,14 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore.js';
 
+const apiBaseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080/api' : undefined);
+
+if (!apiBaseUrl) {
+  throw new Error('Missing required frontend environment variable: VITE_API_URL');
+}
+
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  baseURL: apiBaseUrl,
   withCredentials: true
 });
 

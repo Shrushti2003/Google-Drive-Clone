@@ -1,8 +1,7 @@
 import { api } from './apiClient.js';
 
 export function getApiOrigin() {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-  return apiUrl.replace(/\/api\/?$/, '');
+  return api.defaults.baseURL.replace(/\/api\/?$/, '');
 }
 
 export function redirectToGoogleOAuth() {

@@ -35,6 +35,16 @@ export const checkout = asyncHandler(async (req, res) => {
       await User.findByIdAndUpdate(req.user.id, { stripeCustomerId: customerId });
     }
 
+console.log("========== STRIPE ENV ==========");
+console.log("Secret Key Exists:", !!env.stripe.secretKey);
+console.log(
+  "Secret Key Prefix:",
+  env.stripe.secretKey?.substring(0, 12)
+);
+console.log("Pro Price:", stripePriceForPlan("pro"));
+console.log("Business Price:", stripePriceForPlan("business"));
+console.log("===============================");
+
     session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId,
@@ -51,6 +61,15 @@ export const checkout = asyncHandler(async (req, res) => {
       }
     });
   } catch (error) {
+     console.log("========== STRIPE DEBUG ==========");
+    console.error("Full Error:", error);
+    console.error("Type:", error?.type);
+    console.error("Message:", error?.message);
+    console.error("Code:", error?.code);
+    console.error("Raw:", error?.raw);
+    console.error("Stack:", error?.stack);
+    console.log("=================================");
+
     throw toStripeCheckoutError(error);
   }
 
