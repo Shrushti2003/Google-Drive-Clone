@@ -1,7 +1,25 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore.js';
 
-const apiBaseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080/api' : undefined);
+function normalizeApiBaseUrl(value) {
+  const baseUrl = value?.replace(/\/+$/, '');
+  if (!baseUrl) return baseUrl;
+
+  try {
+    const url = new URL(baseUrl);
+    if (url.pathname === '' || url.pathname === '/') {
+      url.pathname = '/api';
+      return url.toString().replace(/\/+$/, '');
+    }
+  } catch {
+    // Let axios surface malformed custom values the same way it did before.
+  }
+
+  return baseUrl;
+}
+
+const configuredApiBaseUrl = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080/api' : undefined);
+const apiBaseUrl = normalizeApiBaseUrl(configuredApiBaseUrl);
 
 if (!apiBaseUrl) {
   throw new Error('Missing required frontend environment variable: VITE_API_URL');
