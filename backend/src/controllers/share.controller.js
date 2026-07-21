@@ -17,20 +17,35 @@ export const createShareSchema = z.object({
 }).refine((data) => Boolean(data.file) !== Boolean(data.folder), 'Share exactly one file or folder');
 
 export const createShare = asyncHandler(async (req, res) => {
+  let targetFile = null;
+  let targetFolder = null;
   if (req.body.file) {
-    const file = await File.findOneAndUpdate({ _id: req.body.file, owner: req.user.id }, { shared: true }, { new: true });
-    if (!file) throw new AppError('File not found', 404);
+    targetFile = await File.findOneAndUpdate({ _id: req.body.file, owner: req.user.id, trashedAt: null }, { shared: true }, { new: true });
+    if (!targetFile) throw new AppError('File not found', 404);
   }
   if (req.body.folder) {
-    const folder = await Folder.exists({ _id: req.body.folder, owner: req.user.id });
-    if (!folder) throw new AppError('Folder not found', 404);
+    targetFolder = await Folder.findOne({ _id: req.body.folder, owner: req.user.id, trashedAt: null });
+    if (!targetFolder) throw new AppError('Folder not found', 404);
+  }
+
+  const existingLink = await SharedLink.findOne({
+    owner: req.user.id,
+    file: req.body.file || null,
+    folder: req.body.folder || null,
+    visibility: req.body.visibility,
+    downloadEnabled: req.body.downloadEnabled,
+    expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : { $exists: false }
+  }).populate('file folder');
+
+  if (existingLink) {
+    return res.json({ link: existingLink, url: `${env.clientUrl}/share/${existingLink.token}`, reused: true });
   }
 
   const link = await SharedLink.create({
     token: nanoid(24),
     owner: req.user.id,
-    file: req.body.file,
-    folder: req.body.folder,
+    file: targetFile?._id || null,
+    folder: targetFolder?._id || null,
     visibility: req.body.visibility,
     expiresAt: req.body.expiresAt ? new Date(req.body.expiresAt) : undefined,
     downloadEnabled: req.body.downloadEnabled
@@ -52,7 +67,11 @@ export const revokeShare = asyncHandler(async (req, res) => {
 });
 
 export const resolveShare = asyncHandler(async (req, res) => {
-  const link = await SharedLink.findOne({ token: req.params.token }).populate('file folder owner', 'name email avatarUrl');
+  const link = await SharedLink.findOne({ token: req.params.token }).populate([
+    { path: 'file' },
+    { path: 'folder' },
+    { path: 'owner', select: 'name email avatarUrl' }
+  ]);
   if (!link) throw new AppError('Share link not found', 404);
   if (link.expiresAt && link.expiresAt < new Date()) throw new AppError('Share link has expired', 410);
   link.views += 1;

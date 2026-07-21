@@ -1,9 +1,16 @@
+import { createRequire } from 'node:module';
 import { createApp } from './app.js';
 import { connectDatabase } from './config/db.js';
 import { env } from './config/env.js';
 import { startTrashCleanupJob } from './services/trash.service.js';
 
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json');
 const app = createApp();
+const commitHash = process.env.RENDER_GIT_COMMIT || process.env.GIT_COMMIT || 'unknown';
+
+console.log('CloudNest API version:', packageJson.version);
+console.log('CloudNest git commit:', commitHash);
 
 try {
   await connectDatabase();

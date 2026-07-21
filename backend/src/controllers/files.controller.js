@@ -185,7 +185,10 @@ export const updateFile = asyncHandler(async (req, res) => {
   }
   Object.assign(file, req.body);
   await file.save();
-  await recordActivity(req.user.id, req.body.folder !== undefined ? 'move' : 'rename', `Updated "${file.name}"`, { file: file.id });
+  const actionType = req.body.folder !== undefined ? 'move' : req.body.name !== undefined ? 'rename' : null;
+  if (actionType) {
+    await recordActivity(req.user.id, actionType, `Updated "${file.name}"`, { file: file.id });
+  }
   res.json({ file });
 });
 

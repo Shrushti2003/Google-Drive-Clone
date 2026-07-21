@@ -1,9 +1,13 @@
 import Stripe from 'stripe';
 import { env } from './env.js';
 
-export const stripe = env.stripe.secretKey
-  ? new Stripe(env.stripe.secretKey, { apiVersion: '2024-06-20' })
-  : null;
+export const stripeApiVersion = '2024-06-20';
+
+if (!env.stripe.secretKey) {
+  throw new Error('Missing STRIPE_SECRET_KEY');
+}
+
+export const stripe = new Stripe(env.stripe.secretKey, { apiVersion: stripeApiVersion });
 
 export function stripePriceForPlan(plan) {
   if (plan === 'pro') return env.stripe.proPriceId;

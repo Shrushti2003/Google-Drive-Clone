@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Cloud, CreditCard, FileImage, FileText, FolderOpen, HelpCircle, Home, LogOut, Search, Settings, Trash2, UploadCloud, Video, X } from 'lucide-react';
+import { Cloud, CreditCard, FileImage, FileText, FolderOpen, HelpCircle, Home, LogOut, Search, Settings, Star, Trash2, UploadCloud, Video, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -139,6 +139,7 @@ export function AppLayout() {
           <div className="flex items-center justify-between gap-3 md:ml-auto md:justify-end">
             <div className="flex items-center gap-0.5">
               <button className="tooltip-button p-1.5 text-[#bbcac6]/40 transition hover:text-[#4fdbc8]" data-tooltip="Upload" onClick={requestUpload} aria-label="Upload files"><UploadCloud size={20} /></button>
+              <Link className={`tooltip-button p-1.5 transition hover:text-[#4fdbc8] ${location.pathname === '/app/starred' ? 'text-amber-300' : 'text-[#bbcac6]/40'}`} data-tooltip="Starred" to="/app/starred" aria-label="Starred files"><Star size={20} /></Link>
               <Link className="tooltip-button p-1.5 text-[#bbcac6]/40 transition hover:text-[#4fdbc8]" data-tooltip="Billing" data-tooltip-align="right" to="/pricing" aria-label="Billing"><CreditCard size={20} /></Link>
               <div className="relative" ref={settingsRef}>
                 <button className="tooltip-button p-1.5 text-[#bbcac6]/40 transition hover:text-[#4fdbc8]" data-tooltip="Settings" data-tooltip-align="right" aria-label="Settings" onClick={() => setSettingsOpen((open) => !open)}><Settings size={20} /></button>

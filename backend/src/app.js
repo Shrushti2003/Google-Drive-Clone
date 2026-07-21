@@ -34,6 +34,24 @@ export function createApp() {
     res.json({ status: 'ok', service: 'cloudnest-api', timestamp: new Date().toISOString() });
   });
 
+  console.log('Complete middleware order:', [
+    'helmet',
+    'cors',
+    'compression',
+    'cookieParser',
+    'express.raw /api/billing/webhook,/api/stripe/webhook',
+    'express.json',
+    'express.urlencoded',
+    'mongoSanitize',
+    'hpp',
+    'apiLimiter',
+    env.nodeEnv !== 'test' ? 'morgan' : 'morgan skipped in test',
+    'GET /health',
+    'app.use /api -> requireDatabase -> routes',
+    'notFound',
+    'errorHandler'
+  ]);
+
   app.use('/api', requireDatabase, routes);
   app.use(notFound);
   app.use(errorHandler);

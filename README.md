@@ -43,7 +43,7 @@ Backend:
 
 ```env
 PORT=8080
-CLIENT_URL=http://localhost:5173
+FRONTEND_URL=http://localhost:5173
 SERVER_URL=http://localhost:8080
 MONGODB_URI=mongodb://127.0.0.1:27017/cloudnest-drive
 MONGODB_FALLBACK_URI=mongodb://127.0.0.1:27017/cloudnest-drive
@@ -111,8 +111,8 @@ Without Cloudinary credentials, development uploads still create MongoDB records
 ```env
 STRIPE_SECRET_KEY=sk_test_or_live
 STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRO_PRICE_ID=price_...
-STRIPE_BUSINESS_PRICE_ID=price_...
+STRIPE_PRICE_PRO=price_...
+STRIPE_PRICE_BUSINESS=price_...
 ```
 
 If Stripe is not configured, checkout uses the local development flow.
@@ -173,7 +173,7 @@ VITE_API_URL=https://your-backend.example.com/api
 - Build command: `npm install`
 - Start command: `npm start`
 - Set `NODE_ENV=production`
-- Set `CLIENT_URL` to the frontend URL
+- Set `FRONTEND_URL` to the frontend URL
 - Set `SERVER_URL` to the backend URL
 - Set `GOOGLE_OAUTH_CALLBACK_URL` to the production Google callback URL
 - Configure MongoDB, Cloudinary, Stripe, and JWT secrets

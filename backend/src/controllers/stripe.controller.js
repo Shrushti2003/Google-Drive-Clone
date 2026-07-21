@@ -1,1 +1,1 @@
-export { billingPortal, checkout, getSubscription, syncCheckoutSession, webhook } from './billing.controller.js';
+export { billingPortal, checkout, getSubscription, stripeHealth, syncCheckoutSession, webhook } from './billing.controller.js';

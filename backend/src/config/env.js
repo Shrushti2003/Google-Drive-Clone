@@ -21,7 +21,7 @@ const requiredInProduction = [
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
   'COOKIE_SECRET',
-  'CLIENT_URL',
+  'FRONTEND_URL',
   'SERVER_URL',
   'CLOUDINARY_CLOUD_NAME',
   'CLOUDINARY_API_KEY',
@@ -41,7 +41,7 @@ for (const key of requiredInProduction) {
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT || 8080),
-  clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  clientUrl: process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || process.env.VITE_APP_URL || 'http://localhost:5173',
   serverUrl: process.env.SERVER_URL || 'http://localhost:8080',
   mongoUri: process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/cloudnest-drive',
   mongoFallbackUri: process.env.MONGODB_FALLBACK_URI,
@@ -68,7 +68,9 @@ export const env = {
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY,
     webhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-    proPriceId: process.env.STRIPE_PRO_PRICE_ID,
-    businessPriceId: process.env.STRIPE_BUSINESS_PRICE_ID
+    proPriceId: process.env.STRIPE_PRICE_PRO,
+    businessPriceId: process.env.STRIPE_PRICE_BUSINESS,
+    accountDisplayName: process.env.STRIPE_ACCOUNT_DISPLAY_NAME || 'CloudNest',
+    expectedAccountId: process.env.STRIPE_EXPECTED_ACCOUNT_ID
   }
 };

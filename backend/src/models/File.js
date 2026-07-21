@@ -30,5 +30,6 @@ const fileSchema = new mongoose.Schema(
 fileSchema.index({ owner: 1, name: 'text', originalName: 'text', mimeType: 'text', category: 'text', tags: 'text' });
 fileSchema.index({ owner: 1, folder: 1, trashedAt: 1, updatedAt: -1 });
 fileSchema.index({ owner: 1, category: 1, trashedAt: 1, createdAt: -1 });
+fileSchema.index({ owner: 1, starred: 1, trashedAt: 1, updatedAt: -1 });
 
 export const File = mongoose.model('File', fileSchema);

@@ -4,6 +4,7 @@ import { AuthLayout } from './layouts/AuthLayout.jsx';
 import { ProtectedRoute } from './components/routing/ProtectedRoute.jsx';
 import { DrivePage } from './pages/drive/DrivePage.jsx';
 import { HelpCenterPage } from './pages/help/HelpCenterPage.jsx';
+import { StarredPage } from './pages/starred/StarredPage.jsx';
 import { TrashManagerPage } from './pages/trash/TrashManagerPage.jsx';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage.jsx';
 import { LandingPage } from './pages/landing/LandingPage.jsx';
@@ -40,6 +41,7 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <DrivePage /> },
+      { path: 'starred', element: <StarredPage /> },
       { path: 'trash', element: <TrashManagerPage /> },
       { path: 'help', element: <HelpCenterPage /> },
       { path: 'billing', element: <LegacyBillingRedirect /> }

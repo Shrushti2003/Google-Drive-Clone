@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Copy, Download, Folder, FolderOpen, Link2, MoveRight, Pencil, RotateCcw, Star, Trash2 } from 'lucide-react';
+import { Copy, Download, ExternalLink, Folder, FolderOpen, Link2, Mail, MessageCircle, MoveRight, Pencil, RotateCcw, Send, Share2, Star, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { api, getApiError } from '../../services/apiClient.js';
@@ -9,12 +9,13 @@ import { formatBytes, formatDate } from '../../utils/formatters.js';
 import { useUiStore } from '../../store/uiStore.js';
 import { FileIcon } from './FileIcon.jsx';
 
-export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', trash = false }) {
+export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', trash = false, emptyTitle = 'Nothing here yet', emptyDescription = 'Upload files or create folders to start organizing this space.' }) {
   const queryClient = useQueryClient();
   const setPreview = useUiStore((state) => state.setPreview);
   const setCurrentFolderId = useUiStore((state) => state.setCurrentFolderId);
   const fileList = files.filter((file) => file.kind !== 'folder');
   const [moveTarget, setMoveTarget] = useState(null);
+  const [shareTarget, setShareTarget] = useState(null);
 
   const foldersQuery = useQuery({
     queryKey: ['folders'],
@@ -30,6 +31,7 @@ export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', tra
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['files'] });
       queryClient.invalidateQueries({ queryKey: ['drive-files'] });
+      queryClient.invalidateQueries({ queryKey: ['starred-files'] });
       queryClient.invalidateQueries({ queryKey: ['trash-items'] });
       queryClient.invalidateQueries({ queryKey: ['folders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -43,10 +45,8 @@ export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', tra
     window.open(data.url, '_blank', 'noopener,noreferrer');
   }
 
-  async function share(file) {
-    const { data } = await api.post('/shares', { file: file._id, visibility: 'public', downloadEnabled: true });
-    await navigator.clipboard.writeText(data.url);
-    toast.success('Share link copied');
+  function share(file) {
+    setShareTarget(file);
   }
 
   function openItem(item) {
@@ -69,8 +69,8 @@ export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', tra
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-[#4fdbc8]/10 text-[#4fdbc8] shadow-[0_0_38px_rgba(79,219,200,.18)]">
             <Folder size={26} />
           </div>
-          <h3 className="font-display mt-4 text-xl font-semibold">Nothing here yet</h3>
-          <p className="mt-1 text-sm text-[#bbcac6]/50">Upload files or create folders to start organizing this space.</p>
+          <h3 className="font-display mt-4 text-xl font-semibold">{emptyTitle}</h3>
+          <p className="mt-1 text-sm text-[#bbcac6]/50">{emptyDescription}</p>
         </div>
       </div>
     );
@@ -137,6 +137,7 @@ export function DriveItemGrid({ files = [], folders = [], viewMode = 'grid', tra
         </motion.div>
       ))}
       <MoveDialog item={moveTarget} folders={foldersQuery.data || []} loading={foldersQuery.isLoading} onClose={() => setMoveTarget(null)} action={action} />
+      <ShareDialog item={shareTarget} onClose={() => setShareTarget(null)} />
     </div>
   );
 }
@@ -256,4 +257,196 @@ function MoveDialog({ item, folders, loading, onClose, action }) {
       </form>
     </div>
   );
+}
+
+function ShareDialog({ item, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const shareQuery = useQuery({
+    queryKey: ['share-link', item?._id],
+    queryFn: async () => (await api.post('/shares', { file: item._id, visibility: 'public', downloadEnabled: true })).data,
+    enabled: Boolean(item),
+    refetchOnWindowFocus: false
+  });
+
+  if (!item) return null;
+
+  const shareUrl = buildAbsoluteShareUrl(shareQuery.data?.url, shareQuery.data?.link?.token);
+  const title = item.name;
+  const shareText = formatShareText(item, shareUrl);
+  const encodedUrl = encodeURIComponent(shareUrl);
+  const encodedTitle = encodeURIComponent(formatShareHeadline(item));
+  const encodedShareText = encodeURIComponent(shareText);
+  const destinations = [
+    { label: 'WhatsApp', icon: MessageCircle, href: `https://wa.me/?text=${encodedShareText}` },
+    { label: 'Facebook', icon: Share2, href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
+    { label: 'X', icon: X, href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
+    { label: 'Telegram', icon: Send, href: `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}` },
+    { label: 'LinkedIn', icon: ExternalLink, href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}` },
+    { label: 'Reddit', icon: Share2, href: `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}` },
+    { label: 'Email', icon: Mail, href: `mailto:?subject=${encodedTitle}&body=${encodedShareText}` }
+  ];
+
+  async function copyLink() {
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareText);
+    setCopied(true);
+    toast.success('Share message copied');
+    window.setTimeout(() => setCopied(false), 1600);
+  }
+
+  async function nativeShare() {
+    if (!shareUrl || !navigator.share) {
+      await copyLink();
+      toast.error('Native sharing is not available. Link copied instead.');
+      return;
+    }
+
+    try {
+      const shareFile = await buildShareFile(item);
+      if (shareFile && navigator.canShare?.({ files: [shareFile] })) {
+        await navigator.share({ title, text: shareText, files: [shareFile] });
+        return;
+      }
+      await navigator.share({ title, text: formatShareHeadline(item), url: shareUrl });
+    } catch (error) {
+      if (error?.name === 'AbortError') return;
+      await copyLink();
+      toast.error('File sharing is not available here. Link copied instead.');
+    }
+  }
+
+  async function openDiscord() {
+    await copyLink();
+    window.open('https://discord.com/channels/@me', '_blank', 'noopener,noreferrer');
+  }
+
+  async function openDestination(destination) {
+    if (!shareUrl) return;
+    const opened = window.open(destination.href, '_blank', 'noopener,noreferrer,width=720,height=640');
+    if (!opened) {
+      await copyLink();
+      toast.error(`${destination.label} could not be opened. Link copied instead.`);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-xl" onMouseDown={onClose}>
+      <motion.section
+        className="w-full max-w-2xl rounded-xl border border-white/[0.08] bg-[#1d1d1f] p-5 text-white shadow-[0_30px_120px_rgba(0,0,0,.62)]"
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.98 }}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="font-display text-xl font-semibold">Share</h2>
+            <p className="mt-1 truncate text-sm text-white/55">{item.name}</p>
+          </div>
+          <button className="rounded-full p-2 text-white/65 transition hover:bg-white/10 hover:text-white" type="button" onClick={onClose} aria-label="Close share dialog"><X size={20} /></button>
+        </div>
+
+        <div className="mt-6 border-t border-white/10 pt-5">
+          {shareQuery.isLoading ? (
+            <div className="grid min-h-36 place-items-center text-sm text-white/55">Preparing share link...</div>
+          ) : shareQuery.isError ? (
+            <div className="rounded-lg border border-rose-300/20 bg-rose-400/10 p-4 text-sm text-rose-100">Could not create the share link right now.</div>
+          ) : (
+            <>
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {destinations.map((destination) => {
+                  const Icon = destination.icon;
+                  return (
+                    <button key={destination.label} type="button" className="grid min-w-20 justify-items-center gap-2 text-sm font-semibold text-white/85 transition hover:text-[#4fdbc8]" onClick={() => openDestination(destination)}>
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white text-[#111]"><Icon size={24} /></span>
+                  {destination.label}
+                </button>
+                  );
+                })}
+                <button type="button" className="grid min-w-20 justify-items-center gap-2 text-sm font-semibold text-white/85 transition hover:text-[#4fdbc8]" onClick={openDiscord}>
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-indigo-500 text-white"><MessageCircle size={24} /></span>
+                  Discord
+                </button>
+                <button type="button" className="grid min-w-20 justify-items-center gap-2 text-sm font-semibold text-white/85 transition hover:text-[#4fdbc8]" onClick={nativeShare}>
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-white/10 text-white"><Share2 size={24} /></span>
+                  More
+                </button>
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 rounded-xl border border-white/15 bg-black/20 p-3 sm:flex-row sm:items-center">
+                <input className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none" readOnly value={shareUrl} onFocus={(event) => event.target.select()} />
+                <button className="btn-secondary shrink-0 rounded-full px-5" type="button" onClick={copyLink}>{copied ? 'Copied' : 'Copy Link'}</button>
+              </div>
+              <p className="mt-3 text-xs text-white/35">Browsers can share the actual file only when Web Share supports file objects; otherwise CloudNest shares the public link.</p>
+            </>
+          )}
+        </div>
+      </motion.section>
+    </div>
+  );
+}
+
+function formatShareText(item, shareUrl) {
+  return `${formatShareHeadline(item)}\n\n${shareUrl}`;
+}
+
+function formatShareHeadline(item) {
+  return `${shareEmojiForFile(item)} ${item.name}`;
+}
+
+function shareEmojiForFile(item) {
+  const extension = String(item.extension || item.name?.split('.').pop() || '').replace(/^\./, '').toLowerCase();
+  const mimeType = String(item.mimeType || '').toLowerCase();
+  const fileType = String(item.fileType || item.category || '').toLowerCase();
+
+  if (fileType === 'image' || mimeType.startsWith('image/')) return '\u{1F4F7}';
+  if (fileType === 'video' || mimeType.startsWith('video/')) return '\u{1F3A5}';
+  if (fileType === 'audio' || mimeType.startsWith('audio/')) return '\u{1F3B5}';
+  if (fileType === 'pdf' || mimeType === 'application/pdf' || extension === 'pdf') return '\u{1F4C4}';
+  if (['doc', 'docx', 'odt', 'rtf'].includes(extension) || mimeType.includes('word')) return '\u{1F4DD}';
+  if (['xls', 'xlsx', 'ods', 'csv'].includes(extension) || mimeType.includes('excel') || mimeType.includes('spreadsheet')) return '\u{1F4CA}';
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(extension) || mimeType.includes('zip') || mimeType.includes('archive')) return '\u{1F5DC}';
+  return '\u{1F4C1}';
+}
+
+function buildAbsoluteShareUrl(apiUrl, token) {
+  const fallbackPath = token ? `/share/${token}` : '';
+  const source = apiUrl || fallbackPath;
+  if (!source) return '';
+
+  try {
+    const configuredOrigin = getConfiguredFrontendOrigin();
+    const parsed = new URL(source, configuredOrigin);
+    if (isLocalhostOrigin(parsed.origin) && configuredOrigin && !isLocalhostOrigin(configuredOrigin)) {
+      return new URL(parsed.pathname, configuredOrigin).toString();
+    }
+    return parsed.toString();
+  } catch {
+    return source;
+  }
+}
+
+function getConfiguredFrontendOrigin() {
+  const configured = import.meta.env.VITE_APP_URL || import.meta.env.VITE_FRONTEND_URL || import.meta.env.VITE_CLIENT_URL;
+  if (configured) return configured;
+  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
+  return import.meta.env.DEV ? 'http://localhost:5173' : '';
+}
+
+function isLocalhostOrigin(origin) {
+  try {
+    return ['localhost', '127.0.0.1'].includes(new URL(origin).hostname);
+  } catch {
+    return false;
+  }
+}
+
+async function buildShareFile(item) {
+  const sourceUrl = item.secureUrl || item.url;
+  if (!sourceUrl || !globalThis.File) return null;
+  const response = await fetch(sourceUrl);
+  if (!response.ok) return null;
+  const blob = await response.blob();
+  const type = item.mimeType || blob.type || 'application/octet-stream';
+  return new globalThis.File([blob], item.name || 'cloudnest-file', { type });
 }

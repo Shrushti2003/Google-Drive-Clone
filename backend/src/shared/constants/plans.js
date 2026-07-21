@@ -14,7 +14,7 @@ export const STORAGE_PLANS = {
     storageBytes: 80 * 1024 ** 3,
     monthlyPrice: 149,
     currency: 'INR',
-    stripePriceEnv: 'STRIPE_PRO_PRICE_ID',
+    stripePriceEnv: 'STRIPE_PRICE_PRO',
     highlights: ['80 GB storage', 'Advanced sharing controls', 'Priority upload queue']
   },
   business: {
@@ -23,7 +23,7 @@ export const STORAGE_PLANS = {
     storageBytes: 200 * 1024 ** 3,
     monthlyPrice: 350,
     currency: 'INR',
-    stripePriceEnv: 'STRIPE_BUSINESS_PRICE_ID',
+    stripePriceEnv: 'STRIPE_PRICE_BUSINESS',
     highlights: ['200 GB workspace storage', 'Admin analytics', 'Team-ready controls']
   }
 };
