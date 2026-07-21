@@ -25,9 +25,17 @@ export function corsOrigin(origin, callback) {
     origin,
     normalizedOrigin,
     configuredClientOrigin,
-    envClientUrl: env.clientUrl,
+    originType: typeof origin,
+    normalizedOriginType: typeof normalizedOrigin,
+    configuredClientOriginType: typeof configuredClientOrigin,
+    originsMatch: normalizedOrigin === configuredClientOrigin,
+    normalizedOriginJson: JSON.stringify(normalizedOrigin),
+    configuredClientOriginJson: JSON.stringify(configuredClientOrigin),
+    normalizedOriginCharCodes: [...normalizedOrigin].map((c) => c.charCodeAt(0)),
+    configuredClientOriginCharCodes: [...configuredClientOrigin].map((c) => c.charCodeAt(0)),
     frontendEnv: process.env.FRONTEND_URL,
     clientEnv: process.env.CLIENT_URL,
+    envClientUrl: env.clientUrl,
     nodeEnv: env.nodeEnv
   });
 
