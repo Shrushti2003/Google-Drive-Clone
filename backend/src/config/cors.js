@@ -1,9 +1,5 @@
 import { env } from './env.js';
 
-const productionOrigins = new Set([
-  'https://cloudnest-liart.vercel.app'
-]);
-
 const developmentOrigins = new Set([
   'http://localhost:5173',
   'http://127.0.0.1:5173',
@@ -21,7 +17,6 @@ export function corsOrigin(origin, callback) {
   const configuredClientOrigin = normalizeOrigin(env.clientUrl);
   if (
     normalizedOrigin === configuredClientOrigin ||
-    productionOrigins.has(normalizedOrigin) ||
     (env.nodeEnv !== 'production' && developmentOrigins.has(normalizedOrigin))
   ) {
     return callback(null, true);
