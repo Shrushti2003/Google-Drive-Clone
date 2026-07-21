@@ -15,6 +15,15 @@ export function corsOrigin(origin, callback) {
   if (!origin) return callback(null, true);
   const normalizedOrigin = normalizeOrigin(origin);
   const configuredClientOrigin = normalizeOrigin(env.clientUrl);
+
+
+  console.log({
+    origin,
+    normalizedOrigin,
+    configuredClientOrigin,
+    nodeEnv: env.nodeEnv,
+  });
+  
   if (
     normalizedOrigin === configuredClientOrigin ||
     (env.nodeEnv !== 'production' && developmentOrigins.has(normalizedOrigin))
