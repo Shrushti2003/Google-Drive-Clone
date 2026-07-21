@@ -8,7 +8,12 @@ const developmentOrigins = new Set([
 ]);
 
 function normalizeOrigin(origin) {
-  return origin?.replace(/\/+$/, '');
+  if (!origin) return origin;
+  try {
+    return new URL(origin.trim()).origin;
+  } catch {
+    return origin.trim().replace(/\/+$/, '');
+  }
 }
 
 export function corsOrigin(origin, callback) {
@@ -16,14 +21,16 @@ export function corsOrigin(origin, callback) {
   const normalizedOrigin = normalizeOrigin(origin);
   const configuredClientOrigin = normalizeOrigin(env.clientUrl);
 
-
   console.log({
     origin,
     normalizedOrigin,
     configuredClientOrigin,
-    nodeEnv: env.nodeEnv,
+    envClientUrl: env.clientUrl,
+    frontendEnv: process.env.FRONTEND_URL,
+    clientEnv: process.env.CLIENT_URL,
+    nodeEnv: env.nodeEnv
   });
-  
+
   if (
     normalizedOrigin === configuredClientOrigin ||
     (env.nodeEnv !== 'production' && developmentOrigins.has(normalizedOrigin))
